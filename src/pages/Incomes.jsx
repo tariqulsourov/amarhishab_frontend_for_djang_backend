@@ -542,7 +542,12 @@ const Incomes = () => {
                       allWallets={wallets} 
                     />
                     <span style={styles.dot}>•</span>
-                    <span>{item.income_date}</span>
+                    <span style={styles.primaryDate}>{item.income_date}</span>
+                    {item.created_at && (
+                      <span style={styles.entryDate} title={`Entry recorded on ${item.created_at}`}>
+                        (Entry: {item.created_at})
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1012,7 +1017,20 @@ const styles = {
     color: 'var(--color-text-secondary)',
     display: 'flex',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: '6px',
+  },
+  primaryDate: {
+    color: 'var(--color-text-secondary)',
+    fontWeight: '600',
+  },
+  entryDate: {
+    fontSize: '10.5px',
+    color: 'var(--color-text-muted)',
+    fontWeight: '400',
+    backgroundColor: 'rgba(148, 163, 184, 0.1)',
+    padding: '1px 5px',
+    borderRadius: '4px',
   },
   dot: {
     color: 'var(--color-text-muted)',
