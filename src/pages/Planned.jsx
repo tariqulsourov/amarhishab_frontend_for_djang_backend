@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MobileLayout from '../components/MobileLayout';
+import WalletBadge from '../components/WalletBadge';
 import api from '../utils/api';
 import { Plus, X, Trash2, Check, Calendar, DollarSign, Landmark, ChevronRight, AlertCircle, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 
@@ -200,7 +201,11 @@ const Planned = () => {
                     </div>
                     {item.description && <p style={styles.descText}>{item.description}</p>}
                     <div style={styles.subMeta}>
-                      <span style={styles.walletName}>{item.wallet_detail?.wallet_name}</span>
+                      <WalletBadge 
+                        walletName={item.wallet_detail?.wallet_name} 
+                        walletId={item.wallet} 
+                        allWallets={wallets} 
+                      />
                       <span style={styles.dot}>•</span>
                       <span>Scheduled: {item.scheduled_date}</span>
                     </div>

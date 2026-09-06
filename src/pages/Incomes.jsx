@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MobileLayout from '../components/MobileLayout';
+import WalletBadge from '../components/WalletBadge';
 import api from '../utils/api';
 import { Search, Plus, Trash2, Edit2, X, Filter } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
@@ -535,7 +536,11 @@ const Incomes = () => {
                 <div style={styles.cardMeta}>
                   <h4 style={styles.itemTitle}>{item.description || 'Income Entry'}</h4>
                   <div style={styles.subMeta}>
-                    <span style={{ color: 'var(--color-primary)' }}>{item.wallet_detail?.wallet_name}</span>
+                    <WalletBadge 
+                      walletName={item.wallet_detail?.wallet_name} 
+                      walletId={item.wallet} 
+                      allWallets={wallets} 
+                    />
                     <span style={styles.dot}>•</span>
                     <span>{item.income_date}</span>
                   </div>

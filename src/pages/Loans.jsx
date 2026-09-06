@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MobileLayout from '../components/MobileLayout';
+import WalletBadge from '../components/WalletBadge';
 import api from '../utils/api';
 import { Plus, X, Edit2, Trash2, User, Calendar, DollarSign, Wallet, ArrowUpRight, ArrowDownLeft, Landmark } from 'lucide-react';
 
@@ -233,7 +234,11 @@ const Loans = () => {
                     </div>
                     {item.description && <p style={styles.descriptionText}>{item.description}</p>}
                     <div style={styles.subMeta}>
-                      <span style={styles.walletName}>{item.wallet_detail?.wallet_name}</span>
+                      <WalletBadge 
+                        walletName={item.wallet_detail?.wallet_name} 
+                        walletId={item.wallet} 
+                        allWallets={wallets} 
+                      />
                       <span style={styles.dot}>•</span>
                       <span>{item.entry_date}</span>
                     </div>
