@@ -3,7 +3,7 @@ import MobileLayout from '../components/MobileLayout';
 import WalletBadge from '../components/WalletBadge';
 import api from '../utils/api';
 import { Search, Plus, Trash2, Edit2, X, Filter } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Incomes = () => {
   const [incomes, setIncomes] = useState([]);
@@ -29,6 +29,7 @@ const Incomes = () => {
 
   // Form State
   const [form, setForm] = useState({ amount: '', wallet: '', category: '', description: '', date: new Date().toISOString().split('T')[0] });
+  const [categorySearch, setCategorySearch] = useState('');
 
   const fetchMetadata = async () => {
     try {
@@ -57,6 +58,7 @@ const Incomes = () => {
   };
 
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchMetadata();
@@ -205,6 +207,7 @@ const Incomes = () => {
 
   const startEdit = (item) => {
     setEditingItem(item);
+    setCategorySearch('');
     setForm({
       amount: item.amount,
       wallet: item.wallet,
@@ -217,6 +220,13 @@ const Incomes = () => {
   const resetForm = () => {
     setForm({ amount: '', wallet: wallets[0]?.id || '', category: '', description: '', date: new Date().toISOString().split('T')[0] });
     setActivePlannedId(null);
+    setCategorySearch('');
+  };
+
+  const closeModal = () => {
+    setShowAddModal(false);
+    setEditingItem(null);
+    setCategorySearch('');
   };
 
   const handlePrevMonth = () => {
@@ -247,6 +257,10 @@ const Incomes = () => {
     }
     return true;
   });
+
+  const filteredFormCategories = categories.filter(c =>
+    c.short_info?.toLowerCase().includes(categorySearch.toLowerCase().trim())
+  );
 
   const totalSum = filteredIncomes.reduce((sum, item) => sum + item.amount, 0);
 
@@ -497,7 +511,7 @@ const Incomes = () => {
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
                 className="input-field"
-                style={styles.compactDatePicker}
+                style={styles.filterDatePicker}
               />
             </div>
             <div style={{ flex: 1 }}>
@@ -507,7 +521,7 @@ const Incomes = () => {
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
                 className="input-field"
-                style={styles.compactDatePicker}
+                style={styles.filterDatePicker}
               />
             </div>
           </div>
@@ -595,23 +609,45 @@ const Incomes = () => {
           style={styles.modalOverlay}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              setShowAddModal(false);
-              setEditingItem(null);
+              closeModal();
             }
           }}
         >
           <div className="glass-card animate-slide-up" style={styles.modalContent}>
             <div style={styles.modalHeader}>
-              <h3>{editingItem ? 'Edit Income Entry' : 'Log New Income'}</h3>
-              <button onClick={() => { setShowAddModal(false); setEditingItem(null); }} style={styles.closeBtn}>
-                <X size={20} />
+              <h3 style={styles.modalTitle}>{editingItem ? 'Edit Income Entry' : 'Log New Income'}</h3>
+              <button onClick={closeModal} style={styles.closeBtn}>
+                <X size={18} />
               </button>
             </div>
             
             <form onSubmit={editingItem ? handleUpdate : handleCreate} style={styles.form}>
               {/* 1. Category */}
               <div className="form-group" style={styles.formGroup}>
-                <label style={styles.label}>Category</label>
+                <div style={styles.categoryHeaderRow}>
+                  <label style={styles.label}>CATEGORY</label>
+                  {categories.length > 4 && (
+                    <div style={styles.categorySearchWrapper}>
+                      <Search size={11} color="var(--color-text-muted)" />
+                      <input
+                        type="text"
+                        placeholder="Filter..."
+                        value={categorySearch}
+                        onChange={(e) => setCategorySearch(e.target.value)}
+                        style={styles.categorySearchInput}
+                      />
+                      {categorySearch && (
+                        <button
+                          type="button"
+                          onClick={() => setCategorySearch('')}
+                          style={styles.categorySearchClearBtn}
+                        >
+                          <X size={10} />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <div style={styles.categoryChipsWrapper}>
                   {categories.length === 0 ? (
                     <div style={styles.noCategoryMsg}>
@@ -623,8 +659,12 @@ const Incomes = () => {
                         click here
                       </span>.
                     </div>
+                  ) : filteredFormCategories.length === 0 ? (
+                    <div style={styles.noCategoryMatch}>
+                      No category matches "{categorySearch}".
+                    </div>
                   ) : (
-                    categories.map(c => {
+                    filteredFormCategories.map(c => {
                       const isSelected = String(form.category) === String(c.id);
                       return (
                         <button
@@ -649,43 +689,46 @@ const Incomes = () => {
                 </div>
               </div>
 
-              {/* 2. Amount */}
+              {/* 2. Amount & Suggestions 50/50 Row */}
               <div className="form-group" style={styles.formGroup}>
-                <label style={styles.label}>Amount (৳)</label>
-                <input
-                  type="number"
-                  value={form.amount}
-                  onChange={(e) => {
-                    setForm({ ...form, amount: e.target.value });
-                    autoSelectWallet(form.category, e.target.value, incomes);
-                  }}
-                  className="input-field"
-                  required
-                />
-                
-                {/* Suggestions Row */}
-                <div style={styles.suggestionsContainer}>
-                  <span style={styles.suggestionLabel}>Suggest:</span>
-                  {getSuggestedAmounts().map((val, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setForm({ ...form, amount: val });
-                        autoSelectWallet(form.category, val, incomes);
+                <label style={styles.label}>AMOUNT (৳)</label>
+                <div style={styles.amountSuggestionsRow}>
+                  <div style={styles.amountInputCol}>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={form.amount}
+                      onChange={(e) => {
+                        setForm({ ...form, amount: e.target.value });
+                        autoSelectWallet(form.category, e.target.value, incomes);
                       }}
-                      style={styles.suggestionPill}
-                    >
-                      Tk. {val.toLocaleString()}
-                    </button>
-                  ))}
+                      className="input-field"
+                      style={styles.compactAmountInput}
+                      required
+                    />
+                  </div>
+                  <div style={styles.suggestionsCol}>
+                    {getSuggestedAmounts().map((val, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setForm({ ...form, amount: val });
+                          autoSelectWallet(form.category, val, incomes);
+                        }}
+                        style={styles.compactSuggestionPill}
+                      >
+                        {val >= 1000 ? `${val / 1000}k` : val}৳
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* 3. Wallet */}
+              {/* 3. Wallet (Horizontally Scrollable) */}
               <div className="form-group" style={styles.formGroup}>
-                <label style={styles.label}>Select Wallet</label>
-                <div style={styles.chipsWrapper}>
+                <label style={styles.label}>SELECT WALLET</label>
+                <div style={styles.horizontalScrollRow}>
                   {wallets.map(w => {
                     const isSelected = String(form.wallet) === String(w.id);
                     return (
@@ -698,6 +741,8 @@ const Incomes = () => {
                           background: isSelected ? 'var(--color-primary)' : 'var(--bg-card)',
                           color: isSelected ? '#ffffff' : 'var(--color-text-primary)',
                           borderColor: isSelected ? 'var(--color-primary)' : 'var(--border-color)',
+                          flexShrink: 0,
+                          whiteSpace: 'nowrap',
                         }}
                       >
                         💳 {w.wallet_name}
@@ -707,10 +752,10 @@ const Incomes = () => {
                 </div>
               </div>
 
-              {/* 4. Date */}
+              {/* 4. Date (Horizontally Scrollable) */}
               <div className="form-group" style={styles.formGroup}>
-                <label style={styles.label}>Date</label>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <label style={styles.label}>DATE</label>
+                <div style={styles.horizontalScrollRow}>
                   {getRecentDatesList().map((item) => {
                     const isSelected = form.date === item.iso;
                     return (
@@ -723,8 +768,8 @@ const Incomes = () => {
                           background: isSelected ? 'var(--color-primary)' : 'var(--bg-card)',
                           color: isSelected ? '#ffffff' : 'var(--color-text-primary)',
                           borderColor: isSelected ? 'var(--color-primary)' : 'var(--border-color)',
-                          padding: '6px 12px',
-                          borderRadius: '16px',
+                          flexShrink: 0,
+                          whiteSpace: 'nowrap',
                         }}
                       >
                         {item.label}
@@ -736,24 +781,25 @@ const Incomes = () => {
                     value={form.date}
                     onChange={(e) => setForm({ ...form, date: e.target.value })}
                     className="input-field"
-                    style={{ width: '130px', height: '32px', padding: '4px 8px', fontSize: '12px' }}
+                    style={styles.compactDatePicker}
                   />
                 </div>
               </div>
 
               {/* 5. Short Note */}
               <div className="form-group" style={styles.formGroup}>
-                <label style={styles.label}>Description Note</label>
+                <label style={styles.label}>DESCRIPTION NOTE</label>
                 <input
                   type="text"
                   placeholder="e.g. Freelance project milestone"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   className="input-field"
+                  style={styles.compactNoteInput}
                 />
               </div>
 
-              <button type="submit" className="primary-btn" style={{ marginTop: '10px' }}>
+              <button type="submit" className="primary-btn" style={styles.submitBtn}>
                 {editingItem ? 'Save Changes' : 'Log Income'}
               </button>
             </form>
@@ -923,7 +969,7 @@ const styles = {
     marginBottom: '4px',
     display: 'block',
   },
-  compactDatePicker: {
+  filterDatePicker: {
     height: '34px',
     padding: '6px 10px',
     fontSize: '12px',
@@ -1094,12 +1140,12 @@ const styles = {
   modalContent: {
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
-    borderTopLeftRadius: '24px',
-    borderTopRightRadius: '24px',
-    padding: '20px 20px calc(24px + env(safe-area-inset-bottom, 12px)) 20px',
+    borderTopLeftRadius: '20px',
+    borderTopRightRadius: '20px',
+    padding: '16px 12px calc(22px + env(safe-area-inset-bottom, 12px)) 12px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
+    gap: '10px',
     maxHeight: '85vh',
     width: '100%',
     boxSizing: 'border-box',
@@ -1115,85 +1161,176 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingBottom: '2px',
+  },
+  modalTitle: {
+    fontSize: '15px',
+    fontWeight: '700',
+    color: 'var(--color-text-primary)',
   },
   closeBtn: {
     background: 'none',
     border: 'none',
     color: 'var(--color-text-secondary)',
     cursor: 'pointer',
+    padding: '2px',
+    display: 'flex',
+    alignItems: 'center',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
+    gap: '10px',
   },
   formGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '6px',
+    gap: '4px',
   },
   label: {
-    fontSize: '12px',
-    fontWeight: '600',
+    fontSize: '10.5px',
+    fontWeight: '700',
     color: 'var(--color-text-secondary)',
+    letterSpacing: '0.03em',
   },
-  modalSelect: {
-    width: '100%',
+  categoryHeaderRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  categorySearchWrapper: {
+    display: 'flex',
+    alignItems: 'center',
+    background: 'rgba(30, 61, 55, 0.04)',
+    borderRadius: '12px',
+    padding: '2px 8px',
+    gap: '4px',
+    border: '1px solid var(--border-color)',
+  },
+  categorySearchInput: {
+    border: 'none',
+    background: 'none',
+    outline: 'none',
+    fontSize: '11px',
+    color: 'var(--color-text-primary)',
+    width: '90px',
+  },
+  categorySearchClearBtn: {
+    border: 'none',
+    background: 'none',
+    color: 'var(--color-text-muted)',
+    cursor: 'pointer',
+    padding: '0 2px',
+    display: 'flex',
+    alignItems: 'center',
   },
   categoryChipsWrapper: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: '8px',
-    marginTop: '4px',
-    maxHeight: '85px',
+    gap: '6px',
+    marginTop: '2px',
+    maxHeight: '175px',
     overflowY: 'auto',
-    paddingRight: '4px',
-  },
-  chipsWrapper: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '8px',
-    marginTop: '4px',
+    WebkitOverflowScrolling: 'touch',
+    paddingRight: '2px',
   },
   chipButton: {
-    padding: '8px 12px',
-    fontSize: '12px',
-    borderRadius: '20px',
+    padding: '5px 10px',
+    fontSize: '11.5px',
+    borderRadius: '16px',
     border: '1px solid var(--border-color)',
     cursor: 'pointer',
-    display: 'flex',
+    display: 'inline-flex',
     alignItems: 'center',
-    gap: '6px',
-    transition: 'all 0.2s ease',
-  },
-  suggestionsContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    flexWrap: 'wrap',
-    marginTop: '6px',
-  },
-  suggestionLabel: {
-    fontSize: '11px',
-    color: 'var(--color-text-muted)',
-    fontWeight: '600',
-  },
-  suggestionPill: {
-    padding: '4px 10px',
-    fontSize: '11px',
-    borderRadius: '12px',
-    border: '1px solid var(--border-color)',
-    background: 'var(--bg-card)',
-    color: 'var(--color-text-primary)',
-    cursor: 'pointer',
-    fontFamily: 'var(--font-mono)',
+    gap: '4px',
     transition: 'all 0.15s ease',
+  },
+  amountSuggestionsRow: {
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center',
+    width: '100%',
+  },
+  amountInputCol: {
+    flex: '1 1 50%',
+    minWidth: 0,
+  },
+  compactAmountInput: {
+    height: '38px',
+    padding: '6px 12px',
+    fontSize: '15px',
+    fontWeight: '600',
+    borderRadius: '10px',
+  },
+  suggestionsCol: {
+    flex: '1 1 50%',
+    display: 'flex',
+    gap: '4px',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minWidth: 0,
+  },
+  compactSuggestionPill: {
+    flex: 1,
+    height: '38px',
+    padding: '0 4px',
+    borderRadius: '10px',
+    border: '1px solid var(--border-color)',
+    background: 'rgba(30, 61, 55, 0.04)',
+    fontSize: '11px',
+    fontWeight: '700',
+    color: 'var(--color-primary)',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxSizing: 'border-box',
+    transition: 'all 0.15s ease',
+  },
+  horizontalScrollRow: {
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch',
+    gap: '6px',
+    paddingBottom: '3px',
+    width: '100%',
+    scrollbarWidth: 'none',
+  },
+  compactDatePicker: {
+    width: '120px',
+    height: '32px',
+    padding: '4px 6px',
+    fontSize: '11.5px',
+    flexShrink: 0,
+    borderRadius: '14px',
+  },
+  compactNoteInput: {
+    height: '36px',
+    padding: '6px 12px',
+    fontSize: '12.5px',
+    borderRadius: '10px',
+  },
+  submitBtn: {
+    marginTop: '6px',
+    height: '42px',
+    borderRadius: '12px',
+    fontWeight: '700',
+    fontSize: '13.5px',
   },
   noCategoryMsg: {
     color: 'var(--color-danger)',
     fontSize: '13px',
     fontWeight: '500',
     marginTop: '6px',
+  },
+  noCategoryMatch: {
+    fontSize: '11px',
+    color: 'var(--color-text-muted)',
+    fontStyle: 'italic',
+    padding: '8px 0',
   },
   categoryLink: {
     color: 'var(--color-danger)',
