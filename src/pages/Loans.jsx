@@ -46,6 +46,17 @@ const Loans = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (activeModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [activeModal]);
+
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
@@ -266,7 +277,15 @@ const Loans = () => {
 
       {/* Modals Sheet */}
       {activeModal && (
-        <div style={styles.modalOverlay}>
+        <div 
+          style={styles.modalOverlay}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setActiveModal(null);
+              setEditingItem(null);
+            }
+          }}
+        >
           <div className="glass-card animate-slide-up" style={styles.modalContent}>
             <div style={styles.modalHeader}>
               <h3 style={styles.modalTitle}>
@@ -597,28 +616,39 @@ const styles = {
     transition: 'background 0.2s',
   },
   modalOverlay: {
-    position: 'absolute',
+    position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'rgba(3, 7, 18, 0.8)',
+    background: 'rgba(3, 7, 18, 0.75)',
     backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
     display: 'flex',
     justifyContent: 'flex-end',
     flexDirection: 'column',
-    zIndex: 100,
+    zIndex: 2000,
+    touchAction: 'none',
   },
   modalContent: {
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
     borderTopLeftRadius: '24px',
     borderTopRightRadius: '24px',
-    padding: '24px 20px',
+    padding: '20px 20px calc(24px + env(safe-area-inset-bottom, 12px)) 20px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '12px',
+    gap: '14px',
+    maxHeight: '85vh',
+    width: '100%',
+    boxSizing: 'border-box',
+    overflowY: 'auto',
+    WebkitOverflowScrolling: 'touch',
+    touchAction: 'pan-y',
     background: 'var(--bg-card)',
+    border: '1px solid var(--border-color)',
+    borderBottom: 'none',
+    boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.25)',
   },
   modalHeader: {
     display: 'flex',

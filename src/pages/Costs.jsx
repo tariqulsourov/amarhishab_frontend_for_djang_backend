@@ -90,6 +90,17 @@ const Costs = () => {
     }
   }, [location]);
 
+  useEffect(() => {
+    if (showAddModal || editingItem) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showAddModal, editingItem]);
+
   const parseBackendError = (err, defaultMsg) => {
     if (err.response?.data) {
       const data = err.response.data;
@@ -580,7 +591,15 @@ const Costs = () => {
 
       {/* Add / Edit modal sliding panel */}
       {(showAddModal || editingItem) && (
-        <div style={styles.modalOverlay}>
+        <div 
+          style={styles.modalOverlay}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowAddModal(false);
+              setEditingItem(null);
+            }
+          }}
+        >
           <div className="glass-card animate-slide-up" style={styles.modalContent}>
             <div style={styles.modalHeader}>
               <h3>{editingItem ? 'Edit Expense' : 'Log New Expense'}</h3>
@@ -1058,28 +1077,39 @@ const styles = {
     cursor: 'pointer',
   },
   modalOverlay: {
-    position: 'absolute',
+    position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'rgba(3, 7, 18, 0.8)',
+    background: 'rgba(3, 7, 18, 0.75)',
     backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
     display: 'flex',
     justifyContent: 'flex-end',
     flexDirection: 'column',
-    zIndex: 100,
+    zIndex: 2000,
+    touchAction: 'none',
   },
   modalContent: {
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
-    padding: '24px 24px 80px 24px', // Extra bottom padding to sit comfortably above bottom navigation bar
+    borderTopLeftRadius: '24px',
+    borderTopRightRadius: '24px',
+    padding: '20px 20px calc(24px + env(safe-area-inset-bottom, 12px)) 20px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '20px',
-    maxHeight: '90%',
+    gap: '16px',
+    maxHeight: '85vh',
+    width: '100%',
+    boxSizing: 'border-box',
     overflowY: 'auto',
     WebkitOverflowScrolling: 'touch',
+    touchAction: 'pan-y',
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border-color)',
+    borderBottom: 'none',
+    boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.25)',
   },
   modalHeader: {
     display: 'flex',

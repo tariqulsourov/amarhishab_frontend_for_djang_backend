@@ -404,7 +404,7 @@ const styles = {
     justifyContent: 'center',
     alignItems: 'center',
     padding: '20px',
-    zIndex: 200,
+    zIndex: 2000,
   },
   confirmModalBox: {
     width: '100%',
