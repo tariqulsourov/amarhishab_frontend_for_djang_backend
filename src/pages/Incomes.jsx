@@ -1055,11 +1055,14 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '16px',
+    gap: '12px',
   },
   cardLeft: {
     display: 'flex',
     flexDirection: 'column',
     gap: '8px',
+    flex: 1,
+    minWidth: 0,
   },
   badge: {
     color: 'var(--color-success)',
@@ -1076,6 +1079,8 @@ const styles = {
   itemTitle: {
     fontSize: '14px',
     fontWeight: '600',
+    overflowWrap: 'break-word',
+    wordBreak: 'break-word',
   },
   subMeta: {
     fontSize: '12px',
@@ -1103,18 +1108,24 @@ const styles = {
   cardRight: {
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'flex-end',
-    gap: '10px',
+    alignItems: 'flex-start',
+    gap: '8px',
+    minWidth: '95px',
+    flexShrink: 0,
   },
   amount: {
     color: 'var(--color-success)',
     fontFamily: 'var(--font-mono)',
     fontSize: '15px',
     fontWeight: '700',
+    whiteSpace: 'nowrap',
+    textAlign: 'left',
   },
   actionGroup: {
     display: 'flex',
     gap: '12px',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
   },
   actionBtn: {
     background: 'none',
