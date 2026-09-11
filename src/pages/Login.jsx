@@ -9,13 +9,21 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [slowNotice, setSlowNotice] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
+    setSlowNotice(false);
+
+    const timer = setTimeout(() => {
+      setSlowNotice(true);
+    }, 2800);
 
     const result = await login(email, password);
+    clearTimeout(timer);
+    setSlowNotice(false);
     if (!result.success) {
       setError(result.error);
       setSubmitting(false);
@@ -25,7 +33,15 @@ const Login = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     setError('');
     setSubmitting(true);
+    setSlowNotice(false);
+
+    const timer = setTimeout(() => {
+      setSlowNotice(true);
+    }, 2800);
+
     const result = await loginWithGoogle(credentialResponse.credential);
+    clearTimeout(timer);
+    setSlowNotice(false);
     if (!result.success) {
       setError(result.error);
       setSubmitting(false);
@@ -80,6 +96,12 @@ const Login = () => {
               </>
             )}
           </button>
+
+          {slowNotice && (
+            <div style={styles.slowNoticeBox} className="animate-fade-in">
+              <span>⚡ Waking up secure cloud server, please hold on...</span>
+            </div>
+          )}
         </form>
 
         <div style={styles.divider}>
@@ -235,6 +257,20 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
     width: '100%',
+  },
+  slowNoticeBox: {
+    marginTop: '12px',
+    padding: '10px 14px',
+    borderRadius: '8px',
+    background: 'rgba(45, 212, 191, 0.08)',
+    border: '1px solid rgba(45, 212, 191, 0.25)',
+    color: 'var(--color-primary)',
+    fontSize: '12px',
+    textAlign: 'center',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
   }
 };
 

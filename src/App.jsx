@@ -11,16 +11,35 @@ import Categories from './pages/Categories';
 import Loans from './pages/Loans';
 import Planned from './pages/Planned';
 
+const LoadingScreen = () => {
+  const [slowNotice, setSlowNotice] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setSlowNotice(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', width: '100vw', background: 'var(--bg-app)', gap: '14px' }}>
+      <img src="/logo.png" alt="Amar Hishab" style={{ width: '52px', height: '52px', borderRadius: '12px' }} />
+      <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--color-text-secondary)' }}>
+        Verifying credentials...
+      </div>
+      {slowNotice && (
+        <div className="animate-fade-in" style={{ fontSize: '12px', color: 'var(--color-text-muted)', maxWidth: '280px', textAlign: 'center' }}>
+          Connecting to cloud server, please wait a moment...
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Route Guard for Protected Pages
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', width: '100vw' }}>
-        <div style={{ fontSize: '18px', color: 'var(--color-text-secondary)' }}>Verifying credentials...</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (!user) {

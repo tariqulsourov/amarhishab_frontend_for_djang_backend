@@ -4,19 +4,37 @@ import api from '../utils/api';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('currentUser');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
+  });
 
-  // Load user profile if token is already in local storage
+  // If we already have a cached user and an accessToken, do NOT block the screen!
+  const [loading, setLoading] = useState(() => {
+    const token = localStorage.getItem('accessToken');
+    const savedUser = localStorage.getItem('currentUser');
+    return Boolean(token && !savedUser);
+  });
+
+  // Load user profile / sync in background (stale-while-revalidate)
   const fetchProfile = async () => {
     try {
       const response = await api.get('/api/v1/auth/profile/');
       setUser(response.data);
+      localStorage.setItem('currentUser', JSON.stringify(response.data));
     } catch (error) {
       console.error('Failed to fetch profile', error);
-      setUser(null);
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      // Only purge credentials on explicit 401 unrecoverable authorization errors
+      if (error.response?.status === 401) {
+        setUser(null);
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('currentUser');
+      }
     } finally {
       setLoading(false);
     }
@@ -34,10 +52,17 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await api.post('/api/v1/auth/login/', { email, password });
-      const { access, refresh } = response.data;
+      const { access, refresh, user: userData } = response.data;
       localStorage.setItem('accessToken', access);
       localStorage.setItem('refreshToken', refresh);
-      await fetchProfile();
+
+      if (userData) {
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+        setUser(userData);
+      } else {
+        // Fallback for older backend responses
+        await fetchProfile();
+      }
       return { success: true };
     } catch (error) {
       const errorMsg = error.response?.data?.detail || 'Invalid email or password.';
@@ -48,10 +73,16 @@ export const AuthProvider = ({ children }) => {
   const loginWithGoogle = async (idToken) => {
     try {
       const response = await api.post('/api/v1/auth/google/', { id_token: idToken });
-      const { access, refresh } = response.data;
+      const { access, refresh, user: userData } = response.data;
       localStorage.setItem('accessToken', access);
       localStorage.setItem('refreshToken', refresh);
-      await fetchProfile();
+
+      if (userData) {
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+        setUser(userData);
+      } else {
+        await fetchProfile();
+      }
       return { success: true };
     } catch (error) {
       const errorMsg = error.response?.data?.error || 'Google Authentication failed.';
@@ -62,6 +93,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('currentUser');
     setUser(null);
   };
 
@@ -69,6 +101,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.put('/api/v1/auth/profile/', profileData);
       setUser(response.data);
+      localStorage.setItem('currentUser', JSON.stringify(response.data));
       return { success: true };
     } catch (error) {
       return { success: false, error: error.response?.data || 'Failed to update profile.' };
