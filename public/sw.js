@@ -17,12 +17,29 @@ self.addEventListener('push', function(event) {
     data: {
       url: payload.url || '/costs?openAddModal=true',
       approveUrl: payload.approveUrl || null
-    },
-    actions: payload.actions || [] // supports dynamic action buttons
+    }
   };
 
+  // Only attach actions if present and not on iOS (iOS Safari throws TypeError if actions is present)
+  if (payload.actions && Array.isArray(payload.actions) && payload.actions.length > 0) {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent || '');
+    if (!isIOS && 'actions' in Notification.prototype) {
+      options.actions = payload.actions;
+    }
+  }
+
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    self.registration.showNotification(title, options).catch(function(err) {
+      console.warn('showNotification failed with options, retrying fallback:', err);
+      // Fallback: strip actions and retry
+      delete options.actions;
+      return self.registration.showNotification(title, {
+        body: options.body,
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        data: options.data
+      });
+    })
   );
 });
 
