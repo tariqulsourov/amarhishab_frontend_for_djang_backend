@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MobileLayout from '../components/MobileLayout';
 import WalletBadge from '../components/WalletBadge';
 import api from '../utils/api';
@@ -45,11 +45,29 @@ const Costs = () => {
     }
   };
 
-  const fetchCosts = async () => {
+  const monthCache = useRef({});
+
+  const fetchCosts = async (forceRefresh = false) => {
     try {
+      const params = {};
+      if (selectedWallet) params.wallet = selectedWallet;
+      if (fromDate) params.from_date = fromDate;
+      if (toDate) params.to_date = toDate;
+      if (!fromDate && !toDate && selectedMonth) {
+        params.month = selectedMonth;
+      }
+
+      const cacheKey = JSON.stringify(params);
+
+      if (!forceRefresh && monthCache.current[cacheKey]) {
+        setCosts(monthCache.current[cacheKey]);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
-      const params = selectedWallet ? { wallet: selectedWallet } : {};
       const response = await api.get('/api/v1/costs/', { params });
+      monthCache.current[cacheKey] = response.data;
       setCosts(response.data);
     } catch (err) {
       console.error(err);
@@ -63,8 +81,11 @@ const Costs = () => {
 
   useEffect(() => {
     fetchMetadata();
-    fetchCosts();
   }, []);
+
+  useEffect(() => {
+    fetchCosts();
+  }, [selectedMonth, selectedWallet, fromDate, toDate]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -173,7 +194,13 @@ const Costs = () => {
       }
       setShowAddModal(false);
       resetForm();
-      fetchCosts();
+      monthCache.current = {};
+      const entryMonth = (form.date || new Date().toISOString().split('T')[0]).substring(0, 7);
+      if (entryMonth && entryMonth !== selectedMonth) {
+        setSelectedMonth(entryMonth);
+      } else {
+        fetchCosts(true);
+      }
     } catch (err) {
       alert(parseBackendError(err, 'Failed to create expense entry.'));
     } finally {
@@ -196,7 +223,13 @@ const Costs = () => {
       });
       setEditingItem(null);
       resetForm();
-      fetchCosts();
+      monthCache.current = {};
+      const entryMonth = form.date?.substring(0, 7);
+      if (entryMonth && entryMonth !== selectedMonth) {
+        setSelectedMonth(entryMonth);
+      } else {
+        fetchCosts(true);
+      }
     } catch (err) {
       alert(parseBackendError(err, 'Failed to update expense.'));
     } finally {
@@ -208,7 +241,8 @@ const Costs = () => {
     if (!window.confirm('Are you sure you want to delete this expense?')) return;
     try {
       await api.delete(`/api/v1/costs/${id}/`);
-      fetchCosts();
+      monthCache.current = {};
+      fetchCosts(true);
     } catch (err) {
       alert('Delete failed.');
     }
