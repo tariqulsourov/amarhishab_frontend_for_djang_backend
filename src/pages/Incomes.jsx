@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import MobileLayout from '../components/MobileLayout';
 import WalletBadge from '../components/WalletBadge';
 import api from '../utils/api';
-import { Search, Plus, Trash2, Edit2, X, Filter } from 'lucide-react';
+import { Search, Plus, Trash2, Edit2, X, Filter, Loader2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const Incomes = () => {
@@ -26,6 +26,7 @@ const Incomes = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [activePlannedId, setActivePlannedId] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Form State
   const [form, setForm] = useState({ amount: '', wallet: '', category: '', description: '', date: new Date().toISOString().split('T')[0] });
@@ -145,8 +146,10 @@ const Incomes = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     if (!validateForm()) return;
     try {
+      setSubmitting(true);
       if (activePlannedId) {
         // 1. Update the planned transaction first to reflect any edits during review
         await api.put(`/api/v1/scheduled-transactions/${activePlannedId}/`, {
@@ -173,13 +176,17 @@ const Incomes = () => {
       fetchIncomes();
     } catch (err) {
       alert(parseBackendError(err, 'Failed to create income entry.'));
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     if (!validateForm()) return;
     try {
+      setSubmitting(true);
       await api.put(`/api/v1/income/${editingItem.id}/`, {
         amount: form.amount,
         wallet: form.wallet,
@@ -192,6 +199,8 @@ const Incomes = () => {
       fetchIncomes();
     } catch (err) {
       alert(parseBackendError(err, 'Failed to update income.'));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -221,12 +230,14 @@ const Incomes = () => {
     setForm({ amount: '', wallet: wallets[0]?.id || '', category: '', description: '', date: new Date().toISOString().split('T')[0] });
     setActivePlannedId(null);
     setCategorySearch('');
+    setSubmitting(false);
   };
 
   const closeModal = () => {
     setShowAddModal(false);
     setEditingItem(null);
     setCategorySearch('');
+    setSubmitting(false);
   };
 
   const handlePrevMonth = () => {
@@ -799,8 +810,23 @@ const Incomes = () => {
                 />
               </div>
 
-              <button type="submit" className="primary-btn" style={styles.submitBtn}>
-                {editingItem ? 'Save Changes' : 'Log Income'}
+              <button 
+                type="submit" 
+                disabled={submitting} 
+                className="primary-btn" 
+                style={{
+                  ...styles.submitBtn,
+                  ...(submitting ? styles.submitBtnLoading : {})
+                }}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" style={{ marginRight: '8px' }} />
+                    {editingItem ? 'Saving changes...' : 'Logging income...'}
+                  </>
+                ) : (
+                  editingItem ? 'Save Changes' : 'Log Income'
+                )}
               </button>
             </form>
           </div>
@@ -1330,6 +1356,16 @@ const styles = {
     borderRadius: '12px',
     fontWeight: '700',
     fontSize: '13.5px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease',
+  },
+  submitBtnLoading: {
+    background: '#0d9488',
+    color: '#ffffff',
+    cursor: 'not-allowed',
+    opacity: 0.95,
   },
   noCategoryMsg: {
     color: 'var(--color-danger)',

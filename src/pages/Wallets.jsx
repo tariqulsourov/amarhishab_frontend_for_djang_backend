@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import MobileLayout from '../components/MobileLayout';
 import api from '../utils/api';
-import { Wallet, Plus, ArrowLeftRight, X, TrendingUp, TrendingDown, Building, Smartphone } from 'lucide-react';
+import { Wallet, Plus, ArrowLeftRight, X, TrendingUp, TrendingDown, Building, Smartphone, Loader2 } from 'lucide-react';
 
 const Wallets = () => {
   const [wallets, setWallets] = useState([]);
@@ -14,6 +14,8 @@ const Wallets = () => {
 
   // Modals
   const [activeModal, setActiveModal] = useState(null); // 'create' | 'transfer'
+  const [createSubmitting, setCreateSubmitting] = useState(false);
+  const [transferSubmitting, setTransferSubmitting] = useState(false);
 
   // Form State
   const [walletForm, setWalletForm] = useState({ wallet_name: '', wallet_number: '', wallet_status: '', wallet_info: '' });
@@ -56,25 +58,33 @@ const Wallets = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    if (createSubmitting) return;
     try {
+      setCreateSubmitting(true);
       await api.post('/api/v1/wallets/', walletForm);
       setActiveModal(null);
       setWalletForm({ wallet_name: '', wallet_number: '', wallet_status: '', wallet_info: '' });
       fetchData();
     } catch (err) {
       alert('Failed to create wallet.');
+    } finally {
+      setCreateSubmitting(false);
     }
   };
 
   const handleTransfer = async (e) => {
     e.preventDefault();
+    if (transferSubmitting) return;
     try {
+      setTransferSubmitting(true);
       await api.post('/api/v1/wallets/transfer/', transferForm);
       setActiveModal(null);
       setTransferForm({ transfer_from: '', transfer_to: '', amount: '', description: '', transfer_date: new Date().toISOString().split('T')[0] });
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Transfer failed.');
+    } finally {
+      setTransferSubmitting(false);
     }
   };
 
@@ -416,8 +426,23 @@ const Wallets = () => {
                   />
                 </div>
 
-                <button type="submit" className="primary-btn" style={styles.submitBtn}>
-                  Create Wallet
+                <button 
+                  type="submit" 
+                  disabled={createSubmitting} 
+                  className="primary-btn" 
+                  style={{
+                    ...styles.submitBtn,
+                    ...(createSubmitting ? styles.submitBtnLoading : {})
+                  }}
+                >
+                  {createSubmitting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" style={{ marginRight: '8px' }} />
+                      Creating wallet...
+                    </>
+                  ) : (
+                    'Create Wallet'
+                  )}
                 </button>
               </form>
             )}
@@ -521,8 +546,23 @@ const Wallets = () => {
                   />
                 </div>
 
-                <button type="submit" className="primary-btn" style={styles.submitBtn}>
-                  Confirm Transfer
+                <button 
+                  type="submit" 
+                  disabled={transferSubmitting} 
+                  className="primary-btn" 
+                  style={{
+                    ...styles.submitBtn,
+                    ...(transferSubmitting ? styles.submitBtnLoading : {})
+                  }}
+                >
+                  {transferSubmitting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" style={{ marginRight: '8px' }} />
+                      Transferring...
+                    </>
+                  ) : (
+                    'Confirm Transfer'
+                  )}
                 </button>
               </form>
             )}
@@ -792,6 +832,16 @@ const styles = {
     fontWeight: '700',
     fontSize: '13px',
     background: '#112d27',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease',
+  },
+  submitBtnLoading: {
+    background: '#0d9488',
+    color: '#ffffff',
+    cursor: 'not-allowed',
+    opacity: 0.95,
   },
   swapWrapper: {
     display: 'flex',

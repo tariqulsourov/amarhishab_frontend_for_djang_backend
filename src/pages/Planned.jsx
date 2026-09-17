@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import MobileLayout from '../components/MobileLayout';
 import WalletBadge from '../components/WalletBadge';
 import api from '../utils/api';
-import { Plus, X, Trash2, Check, Calendar, DollarSign, Landmark, ChevronRight, AlertCircle, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { Plus, X, Trash2, Check, Calendar, DollarSign, Landmark, ChevronRight, AlertCircle, ArrowUpRight, ArrowDownLeft, Loader2 } from 'lucide-react';
 
 const Planned = () => {
   const [scheduledList, setScheduledList] = useState([]);
@@ -13,6 +13,7 @@ const Planned = () => {
   
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Form State
   const [form, setForm] = useState({
@@ -74,11 +75,13 @@ const Planned = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     if (selectedDates.length === 0) {
       alert('Please add at least one schedule date.');
       return;
     }
     try {
+      setSubmitting(true);
       const payload = {
         transaction_type: form.transaction_type,
         amount: parseInt(form.amount, 10),
@@ -95,6 +98,8 @@ const Planned = () => {
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to schedule transaction.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -129,6 +134,7 @@ const Planned = () => {
     });
     setSelectedDates([today]);
     setTempDate(today);
+    setSubmitting(false);
   };
 
   const getStatusBadgeStyles = (status) => {
@@ -428,8 +434,23 @@ const Planned = () => {
                 />
               </div>
 
-              <button type="submit" className="primary-btn" style={styles.submitBtn}>
-                Schedule Log
+              <button 
+                type="submit" 
+                disabled={submitting} 
+                className="primary-btn" 
+                style={{
+                  ...styles.submitBtn,
+                  ...(submitting ? styles.submitBtnLoading : {})
+                }}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" style={{ marginRight: '8px' }} />
+                    Scheduling...
+                  </>
+                ) : (
+                  'Schedule Log'
+                )}
               </button>
             </form>
           </div>
@@ -719,6 +740,16 @@ const styles = {
     fontWeight: '700',
     fontSize: '13px',
     background: '#112d27',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease',
+  },
+  submitBtnLoading: {
+    background: '#0d9488',
+    color: '#ffffff',
+    cursor: 'not-allowed',
+    opacity: 0.95,
   },
   infoText: {
     textAlign: 'center',

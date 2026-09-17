@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import MobileLayout from '../components/MobileLayout';
 import api from '../utils/api';
-import { Plus, Trash2, Edit2, X, Check, FolderOpen, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Check, FolderOpen, AlertTriangle, Loader2 } from 'lucide-react';
 
 const Categories = () => {
   const [activeTab, setActiveTab] = useState('cost'); // 'cost' or 'income'
@@ -156,8 +156,24 @@ const Categories = () => {
           style={{ flexGrow: 1, height: '38px', borderRadius: '10px' }}
           required
         />
-        <button type="submit" className="primary-btn" style={styles.addButton} disabled={creating}>
-          <Plus size={16} style={{ marginRight: '4px' }} /> Add
+        <button 
+          type="submit" 
+          className="primary-btn" 
+          style={{
+            ...styles.addButton,
+            ...(creating ? styles.addButtonLoading : {})
+          }} 
+          disabled={creating}
+        >
+          {creating ? (
+            <>
+              <Loader2 size={15} className="animate-spin" style={{ marginRight: '4px' }} /> Adding...
+            </>
+          ) : (
+            <>
+              <Plus size={16} style={{ marginRight: '4px' }} /> Add
+            </>
+          )}
         </button>
       </form>
 
@@ -321,6 +337,16 @@ const styles = {
     fontWeight: '700',
     flexShrink: 0,
     textTransform: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease',
+  },
+  addButtonLoading: {
+    background: '#0d9488',
+    color: '#ffffff',
+    cursor: 'not-allowed',
+    opacity: 0.95,
   },
   listContainer: {
     display: 'flex',

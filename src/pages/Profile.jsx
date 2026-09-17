@@ -4,7 +4,7 @@ import MobileLayout from '../components/MobileLayout';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { User, Phone, Mail, Settings, ShieldAlert, LogOut, CheckCircle } from 'lucide-react';
+import { User, Phone, Mail, Settings, ShieldAlert, LogOut, CheckCircle, Loader2 } from 'lucide-react';
 
 const Profile = () => {
   const { user, updateProfile, logout } = useAuth();
@@ -287,8 +287,27 @@ const Profile = () => {
           </div>
         )}
 
-        <button type="submit" className="primary-btn" disabled={saving} style={{ marginTop: '8px' }}>
-          {saving ? 'Saving...' : 'Save Settings'}
+        <button 
+          type="submit" 
+          className="primary-btn" 
+          disabled={saving} 
+          style={{ 
+            marginTop: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease',
+            ...(saving ? { background: '#0d9488', color: '#ffffff', cursor: 'not-allowed', opacity: 0.95 } : {})
+          }}
+        >
+          {saving ? (
+            <>
+              <Loader2 size={16} className="animate-spin" style={{ marginRight: '8px' }} />
+              Saving settings...
+            </>
+          ) : (
+            'Save Settings'
+          )}
         </button>
       </form>
 

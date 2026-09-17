@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import MobileLayout from '../components/MobileLayout';
 import WalletBadge from '../components/WalletBadge';
 import api from '../utils/api';
-import { Plus, X, Edit2, Trash2, User, Calendar, DollarSign, Wallet, ArrowUpRight, ArrowDownLeft, Landmark } from 'lucide-react';
+import { Plus, X, Edit2, Trash2, User, Calendar, DollarSign, Wallet, ArrowUpRight, ArrowDownLeft, Landmark, Loader2 } from 'lucide-react';
 
 const Loans = () => {
   const [loans, setLoans] = useState([]);
@@ -12,6 +12,7 @@ const Loans = () => {
   const [editingItem, setEditingItem] = useState(null);
   const [filterType, setFilterType] = useState('all'); // 'all' | 'payable' | 'receivable'
   const [searchQuery, setSearchQuery] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   // Form State
   const [form, setForm] = useState({
@@ -59,19 +60,25 @@ const Loans = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     try {
+      setSubmitting(true);
       await api.post('/api/v1/loans/', form);
       setActiveModal(null);
       resetForm();
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to record loan entry.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     try {
+      setSubmitting(true);
       await api.put(`/api/v1/loans/${editingItem.id}/`, form);
       setActiveModal(null);
       setEditingItem(null);
@@ -79,6 +86,8 @@ const Loans = () => {
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to update loan entry.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -114,6 +123,7 @@ const Loans = () => {
       description: '',
       entry_type: 'take'
     });
+    setSubmitting(false);
   };
 
   // Calculations
@@ -416,8 +426,23 @@ const Loans = () => {
                 />
               </div>
 
-              <button type="submit" className="primary-btn" style={styles.submitBtn}>
-                {activeModal === 'create' ? 'Record Entry' : 'Save Changes'}
+              <button 
+                type="submit" 
+                disabled={submitting} 
+                className="primary-btn" 
+                style={{
+                  ...styles.submitBtn,
+                  ...(submitting ? styles.submitBtnLoading : {})
+                }}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" style={{ marginRight: '8px' }} />
+                    {activeModal === 'create' ? 'Logging loan...' : 'Saving changes...'}
+                  </>
+                ) : (
+                  activeModal === 'create' ? 'Record Entry' : 'Save Changes'
+                )}
               </button>
             </form>
           </div>
@@ -719,6 +744,16 @@ const styles = {
     fontWeight: '700',
     fontSize: '13px',
     background: '#112d27',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease',
+  },
+  submitBtnLoading: {
+    background: '#0d9488',
+    color: '#ffffff',
+    cursor: 'not-allowed',
+    opacity: 0.95,
   },
   infoText: {
     textAlign: 'center',
