@@ -314,6 +314,9 @@ const Profile = () => {
       {/* Quick Links / Loans shortcut */}
       <div className="glass-card" style={{ ...styles.formCard, marginTop: '16px', gap: '8px' }}>
         <h4 style={styles.sectionTitle}>Manage Financials</h4>
+        <Link to="/investments" className="secondary-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', textDecoration: 'none', color: '#047857', border: '1px solid #047857', marginBottom: '8px' }}>
+          📈 Investments & Portfolio
+        </Link>
         <Link to="/loans" className="secondary-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', textDecoration: 'none', color: 'var(--color-primary)', border: '1px solid var(--color-primary)' }}>
           💰 Personal Loans Manager
         </Link>

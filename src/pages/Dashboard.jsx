@@ -420,6 +420,13 @@ const Dashboard = () => {
           <span style={{ ...styles.actionText, color: '#0369a1' }}>LOANS</span>
         </div>
 
+        <div onClick={() => navigate('/investments')} style={{ ...styles.actionCard, background: '#ecfdf5', color: '#047857' }}>
+          <div style={{ ...styles.actionIconContainer, background: 'rgba(4, 120, 87, 0.1)', color: '#047857' }}>
+            <TrendingUp size={18} strokeWidth={2.5} />
+          </div>
+          <span style={{ ...styles.actionText, color: '#047857' }}>INVEST</span>
+        </div>
+
         <div onClick={() => navigate('/planned')} style={{ ...styles.actionCard, background: '#fef3c7', color: '#b45309' }}>
           <div style={{ ...styles.actionIconContainer, background: 'rgba(180, 83, 9, 0.1)', color: '#b45309' }}>
             <span style={{ fontSize: '18px', fontWeight: '700' }}>🗓</span>
