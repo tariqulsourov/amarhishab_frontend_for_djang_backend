@@ -20,6 +20,7 @@ const Investments = () => {
   const [activeModal, setActiveModal] = useState(null); // 'create' | 'transaction' | 'valuation' | 'history'
   const [selectedEntity, setSelectedEntity] = useState(null);
   const [entityTransactions, setEntityTransactions] = useState([]);
+  const [historyFilterTab, setHistoryFilterTab] = useState('all');
   const [loadingTx, setLoadingTx] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
@@ -201,6 +202,7 @@ const Investments = () => {
   const openHistoryModal = async (entity) => {
     setSelectedEntity(entity);
     setActiveModal('history');
+    setHistoryFilterTab('all');
     setLoadingTx(true);
     try {
       const res = await api.get(`/api/v1/investments/${entity.id}/transactions/`);
@@ -252,6 +254,27 @@ const Investments = () => {
         return { label: type, bg: 'rgba(148, 163, 184, 0.1)', color: '#64748b' };
     }
   };
+
+  const historyTabs = selectedEntity?.direction === 'incoming'
+    ? [
+        { key: 'all', label: 'All' },
+        { key: 'capital_inject', label: 'Capital In' },
+        { key: 'capital_withdraw', label: 'Buyback' },
+        { key: 'profit_paid', label: 'Profit Paid' },
+      ]
+    : [
+        { key: 'all', label: 'All' },
+        { key: 'capital_inject', label: 'Capital Add' },
+        { key: 'capital_withdraw', label: 'Recovery / Sell' },
+        { key: 'profit_received', label: 'Profit' },
+      ];
+
+  const filteredTransactions = entityTransactions.filter((tx) => {
+    if (historyFilterTab === 'all') return true;
+    return tx.transaction_type === historyFilterTab;
+  });
+
+  const filteredTotalAmount = filteredTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
   return (
     <MobileLayout title="Investments & Assets">
@@ -821,7 +844,7 @@ const Investments = () => {
       {/* ========================================================================= */}
       {activeModal === 'history' && selectedEntity && (
         <div style={styles.modalOverlay}>
-          <div className="glass-card" style={{ ...styles.modalBox, maxHeight: '85vh' }}>
+          <div className="glass-card" style={{ ...styles.modalBox, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
             <div style={styles.modalHeader}>
               <div>
                 <h3 style={styles.modalTitle}>Transaction History</h3>
@@ -834,17 +857,98 @@ const Investments = () => {
               </button>
             </div>
 
-            <div style={{ overflowY: 'auto', maxHeight: '60vh', padding: '4px 0' }}>
+            {/* Filter Tabs Bar (All, Capital Add, Recovery/Sell, Profit) */}
+            <div style={{
+              display: 'flex',
+              gap: '6px',
+              overflowX: 'auto',
+              paddingBottom: '8px',
+              marginBottom: '10px',
+              borderBottom: '1px solid var(--border-color)',
+              scrollbarWidth: 'none',
+              WebkitOverflowScrolling: 'touch'
+            }}>
+              {historyTabs.map((tab) => {
+                const isActive = historyFilterTab === tab.key;
+                const count = tab.key === 'all'
+                  ? entityTransactions.length
+                  : entityTransactions.filter((tx) => tx.transaction_type === tab.key).length;
+
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setHistoryFilterTab(tab.key)}
+                    style={{
+                      ...styles.pillBtn,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      whiteSpace: 'nowrap',
+                      padding: '5px 10px',
+                      fontSize: '11px',
+                      borderRadius: '16px',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      ...(isActive ? styles.pillActive : {})
+                    }}
+                  >
+                    <span>{tab.label}</span>
+                    <span style={{
+                      fontSize: '10px',
+                      fontWeight: '700',
+                      opacity: isActive ? 1 : 0.75,
+                      background: isActive ? 'rgba(255, 255, 255, 0.25)' : 'var(--bg-app)',
+                      padding: '1px 5px',
+                      borderRadius: '8px',
+                      border: isActive ? 'none' : '1px solid var(--border-color)'
+                    }}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Sub-summary stats banner */}
+            {!loadingTx && entityTransactions.length > 0 && (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '6px 12px',
+                background: 'rgba(13, 148, 136, 0.06)',
+                borderRadius: '10px',
+                marginBottom: '10px',
+                fontSize: '11px',
+                color: 'var(--color-text-secondary)',
+                border: '1px solid rgba(13, 148, 136, 0.15)'
+              }}>
+                <span>
+                  Showing {filteredTransactions.length} of {entityTransactions.length} record{entityTransactions.length !== 1 ? 's' : ''}
+                </span>
+                <span style={{ fontWeight: '700', color: 'var(--color-text-primary)' }}>
+                  Total: Tk. <span className="monospace-number">{filteredTotalAmount.toLocaleString()}</span>
+                </span>
+              </div>
+            )}
+
+            {/* Scrollable Transaction Records List */}
+            <div style={{ overflowY: 'auto', maxHeight: '55vh', padding: '2px 0' }}>
               {loadingTx ? (
                 <div style={styles.centerLoading}>
                   <Loader2 size={20} className="animate-spin" color="var(--color-primary)" />
                 </div>
               ) : entityTransactions.length === 0 ? (
-                <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--color-text-muted)', padding: '20px 0' }}>
+                <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--color-text-muted)', padding: '24px 0' }}>
                   No transactions recorded yet.
                 </p>
+              ) : filteredTransactions.length === 0 ? (
+                <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--color-text-muted)', padding: '24px 0' }}>
+                  No transactions in this category.
+                </p>
               ) : (
-                entityTransactions.map((tx) => {
+                filteredTransactions.map((tx) => {
                   const badge = getTxTypeBadge(tx.transaction_type);
                   return (
                     <div key={tx.id} style={styles.historyRow}>
