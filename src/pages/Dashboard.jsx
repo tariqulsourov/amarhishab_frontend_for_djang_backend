@@ -356,7 +356,29 @@ const Dashboard = () => {
     <MobileLayout title="Amar Hishab">
       {/* Balance Teal Card */}
       <div className="glass-card" style={styles.balanceCard}>
-        <span style={styles.balanceLabel}>CURRENT LIQUIDITY</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+          <span style={styles.balanceLabel}>CURRENT LIQUIDITY</span>
+          {data?.net_worth !== undefined && (
+            <div 
+              onClick={() => navigate('/investments')}
+              style={{ 
+                fontSize: '11px', 
+                fontWeight: '700', 
+                background: 'rgba(255, 255, 255, 0.22)', 
+                color: '#ffffff', 
+                padding: '2px 8px', 
+                borderRadius: '12px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="Click to view Investments & Net Worth Breakdown"
+            >
+              <span>Net Worth: ৳ {data.net_worth.toLocaleString()}</span>
+            </div>
+          )}
+        </div>
         <h1 style={styles.balanceValue}>Tk. <span className="monospace-number">{(data?.total_balance ?? 0).toLocaleString()}</span></h1>
         <div style={styles.metricsRow}>
           <div style={styles.metricCol}>
@@ -412,6 +434,44 @@ const Dashboard = () => {
           <span style={{ ...styles.actionText, color: '#115e59' }}>SECTORS</span>
         </div>
       </div>
+
+      {/* Portfolio Quick Glance Card */}
+      {data?.investments_summary?.outgoing?.current_portfolio_value > 0 && (
+        <div 
+          onClick={() => navigate('/investments')}
+          className="glass-card" 
+          style={{ 
+            padding: '12px 16px', 
+            borderRadius: '14px', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            cursor: 'pointer',
+            border: '1px solid var(--border-color)',
+            marginBottom: '16px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <TrendingUp size={18} />
+            </div>
+            <div>
+              <span style={{ fontSize: '9.5px', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                INVESTMENT PORTFOLIO
+              </span>
+              <h4 style={{ margin: '1px 0 0', fontSize: '13.5px', fontWeight: '700' }}>
+                Tk. <span className="monospace-number">{data.investments_summary.outgoing.current_portfolio_value.toLocaleString()}</span>
+                {data.investments_summary.outgoing.roi_percentage !== undefined && (
+                  <span style={{ marginLeft: '8px', fontSize: '11px', color: '#10b981', fontWeight: '600' }}>
+                    ({data.investments_summary.outgoing.roi_percentage >= 0 ? '+' : ''}{data.investments_summary.outgoing.roi_percentage}%)
+                  </span>
+                )}
+              </h4>
+            </div>
+          </div>
+          <ChevronRight size={16} color="var(--color-text-muted)" />
+        </div>
+      )}
 
       {/* Cash Flow Comparison Chart */}
       <div className="glass-card" style={styles.chartPanel}>

@@ -10,6 +10,7 @@ import Profile from './pages/Profile';
 import Categories from './pages/Categories';
 import Loans from './pages/Loans';
 import Planned from './pages/Planned';
+import Investments from './pages/Investments';
 
 const LoadingScreen = () => {
   const [slowNotice, setSlowNotice] = React.useState(false);
@@ -137,6 +138,14 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <Planned />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/investments" 
+          element={
+            <ProtectedRoute>
+              <Investments />
             </ProtectedRoute>
           } 
         />
